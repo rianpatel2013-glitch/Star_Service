@@ -47,7 +47,7 @@ app.command("/ss-find", async ({ ack, command, respond, client }) => {
         if (joinErr.data?.error === "channel_not_found" ||
             joinErr.data?.error === "method_not_supported_for_channel_type") {
             await respond({
-                text: "This is a private channel. Please invite the bot first with `/invite @Super Service` (it's the one with ) then try again.",
+                text: "This is a private channel. Please invite the bot first with `/invite @Star Service` then try again.",
                 replace_original: true
             });
             return;
