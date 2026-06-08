@@ -6,6 +6,7 @@ const axios = require("axios");
 
 const searchSessions = {};
 const showerThoughtHistory = {};
+const quoteHistory = {};
 
 const SHOWER_THOUGHTS = [
     "Go to bed; you'll feel better in the morning is the human version of Did you turn it off and turn it back on again?",
@@ -120,7 +121,8 @@ app.command("/ss-help", async ({ ack, respond }) => {
         text:
             `Available Commands:
 /ss-find [phrase] - Helps you find a phrase in the whole channel
-/ss-shower-thought - Gives you a random shower thought`
+/ss-shower-thought - Gives you a random shower thought
+/ss-quote - Gives you a random quote`
     });
 });
 
@@ -141,7 +143,6 @@ app.command("/ss-find", async ({ ack, command, respond, client }) => {
     const userId = command.user_id;
 
     await respond({
-        response_type: "ephemeral",
         text: "Searching through the channel...",
     });
 
@@ -210,7 +211,8 @@ app.command("/ss-find", async ({ ack, command, respond, client }) => {
 
     } catch (err) {
         await respond({
-            text: `Failed to find that phrase. ${err.message}`
+            text: `Failed to find that phrase. ${err.message}`,
+            replace_original: true
         });
     }
 });
@@ -306,6 +308,45 @@ app.command("/ss-shower-thought", async ({ ack, respond, command }) => {
     await respond({
         text: thought
     });
+});
+
+app.command("/ss-quote", async ({ ack, command, respond }) => {
+    await ack();
+
+    await respond({
+        text: "Fetching a quote...",
+    });
+
+    try {
+        const response = await axios.get("https://zenquotes.io/api/quotes", {
+            timeout: 10000
+        });
+
+        const userId = command.user_id;
+
+        const quotes = response.data.map(q => `"${q.q}" - ${q.a}`);
+
+        const seen = quoteHistory[userId] || [];
+        const unseen = quotes.filter(t => !seen.includes(t));
+
+        const pool = unseen.length > 0 ? unseen : quotes;
+        const quote = pool[Math.floor(Math.random() * pool.length)];
+
+        quoteHistory[userId] = unseen.length > 0 ? [...seen, quote] : [quote];
+
+        await respond({
+            text: quote,
+            replace_original: true
+        });
+    } catch (err) {
+        const isTimeout = err.code === "ECONNABORTED" || err.code === "ETIMEDOUT";
+        await respond({
+            text: isTimeout
+                ? "Server took too long to respond. Try again, preferably with a better network connection."
+                : `Failed to fetch a quote. ${err.message}`,
+            replace_original: true
+        });
+    }
 });
 
 (async () => {
