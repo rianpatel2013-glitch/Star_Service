@@ -333,7 +333,7 @@ app.command("/ss-quote", async ({ ack, command, respond }) => {
     });
 
     try {
-        const data = cachedQuotes.length > 0 ? cachedQuotes : await fetchQuotes();
+        const data = cachedQuotes
         const quotes = data.map(q => `"${q.q}" - ${q.a}`);
 
         const userId = command.user_id;
@@ -363,4 +363,11 @@ app.command("/ss-quote", async ({ ack, command, respond }) => {
 (async () => {
     await app.start();
     console.log("bot is running!");
+
+    try {
+        await fetchQuotes();
+        console.log("Quotes cached successfully.");
+    } catch (err) {
+        console.error("Failed to pre-fetch quotes:", err.message);
+    }
 })();
