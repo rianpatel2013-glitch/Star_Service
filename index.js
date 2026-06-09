@@ -109,6 +109,7 @@ const SHOWER_THOUGHTS = [
     "Generally speaking, when you feel stupid, it's because you're expanding your knowledge and getting smarter.",
     "Math is the only place where someone would buy 60 watermelons and 40 cantaloupes and no one asks any questions.",
 ];
+let cachedQuotes = [];
 
 const app = new App({
     token: process.env.SLACK_BOT_TOKEN,
@@ -311,23 +312,31 @@ app.command("/ss-shower-thought", async ({ ack, respond, command }) => {
     });
 });
 
+async function fetchQuotes() {
+    const response = await axios.get("https://zenquotes.io/api/quotes", {
+        timeout: 15000,
+        httpsAgent: new https.Agent({ keepAlive: true })
+    });
+    if (!response.data) {
+        console.log("No Response")
+    }
+    cachedQuotes = response.data;
+    return cachedQuotes;
+}
+
 app.command("/ss-quote", async ({ ack, command, respond }) => {
     await ack();
 
     await respond({
-        text: "Fetching a quote...",
+        response_type: "ephemeral",
+        text: "Fetching a quote..."
     });
 
     try {
-        const response = await axios.get("https://zenquotes.io/api/quotes", {
-            timeout: 15000,
-            httpsAgent: new https.Agent({ keepAlive: true })
-        });
+        const data = cachedQuotes.length > 0 ? cachedQuotes : await fetchQuotes();
+        const quotes = data.map(q => `"${q.q}" - ${q.a}`);
 
         const userId = command.user_id;
-
-        const quotes = response.data.map(q => `"${q.q}" - ${q.a}`);
-
         const seen = quoteHistory[userId] || [];
         const unseen = quotes.filter(t => !seen.includes(t));
 
@@ -341,10 +350,10 @@ app.command("/ss-quote", async ({ ack, command, respond }) => {
             replace_original: true
         });
     } catch (err) {
-        const isTimeout = err.code === "ECONNABORTED" || err.code === "ETIMEDOUT";
+        const isTimeout = err.code === "ECONNABORTED" || err.code === "ETIMEDOUT" || err.code === "ECONNRESET";
         await respond({
             text: isTimeout
-                ? "Server took too long to respond. Try again, preferably with a better network connection."
+                ? "Server took too long to respond. Try again, preferably with a better connection."
                 : `Failed to fetch a quote. ${err.message}`,
             replace_original: true
         });
