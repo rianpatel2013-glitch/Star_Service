@@ -314,7 +314,7 @@ app.command("/ss-shower-thought", async ({ ack, respond, command }) => {
 
 async function fetchQuotes() {
     const response = await axios.get("https://zenquotes.io/api/quotes", {
-        timeout: 15000,
+        timeout: 20000,
         httpsAgent: new https.Agent({ keepAlive: true })
     });
     if (!response.data) {
@@ -327,37 +327,22 @@ async function fetchQuotes() {
 app.command("/ss-quote", async ({ ack, command, respond }) => {
     await ack();
 
+    const data = cachedQuotes
+    const quotes = data.map(q => `"${q.q}" - ${q.a}`);
+
+    const userId = command.user_id;
+    const seen = quoteHistory[userId] || [];
+    const unseen = quotes.filter(t => !seen.includes(t));
+
+    const pool = unseen.length > 0 ? unseen : quotes;
+    const quote = pool[Math.floor(Math.random() * pool.length)];
+
+    quoteHistory[userId] = unseen.length > 0 ? [...seen, quote] : [quote];
+
     await respond({
-        response_type: "ephemeral",
-        text: "Fetching a quote..."
+        text: quote,
+        replace_original: true
     });
-
-    try {
-        const data = cachedQuotes
-        const quotes = data.map(q => `"${q.q}" - ${q.a}`);
-
-        const userId = command.user_id;
-        const seen = quoteHistory[userId] || [];
-        const unseen = quotes.filter(t => !seen.includes(t));
-
-        const pool = unseen.length > 0 ? unseen : quotes;
-        const quote = pool[Math.floor(Math.random() * pool.length)];
-
-        quoteHistory[userId] = unseen.length > 0 ? [...seen, quote] : [quote];
-
-        await respond({
-            text: quote,
-            replace_original: true
-        });
-    } catch (err) {
-        const isTimeout = err.code === "ECONNABORTED" || err.code === "ETIMEDOUT" || err.code === "ECONNRESET";
-        await respond({
-            text: isTimeout
-                ? "Server took too long to respond. Try again, preferably with a better connection."
-                : `Failed to fetch a quote. ${err.message}`,
-            replace_original: true
-        });
-    }
 });
 
 (async () => {
