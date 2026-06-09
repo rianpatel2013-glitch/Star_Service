@@ -3,6 +3,7 @@ require("dotenv").config();
 const { App } = require("@slack/bolt");
 
 const axios = require("axios");
+const https = require("https");
 
 const searchSessions = {};
 const showerThoughtHistory = {};
@@ -319,7 +320,8 @@ app.command("/ss-quote", async ({ ack, command, respond }) => {
 
     try {
         const response = await axios.get("https://zenquotes.io/api/quotes", {
-            timeout: 10000
+            timeout: 15000,
+            httpsAgent: new https.Agent({ keepAlive: true })
         });
 
         const userId = command.user_id;
