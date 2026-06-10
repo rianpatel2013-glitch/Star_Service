@@ -6,6 +6,8 @@ This is a Slack Bot in the Hack Club Workspace designed to help you do the follo
 /ss-quote (gives you a random quote from a completely free API call referencing thousands of quotes for the top 50 ones. Credits: ZenQuotes.io)
 Setup: (https://stardance.hackclub.com/missions/slack-bot/guide#step-1):
 
+This Project is published as a package on npm: https://www.npmjs.com/package/star_service
+
 You'll need to install Node JS, npm, and the modules: @slack/bolt and dotenv.
 
 You'll also need a Slack app with the following bot token scopes: app_mentions:read, channels:history, channels:read, channels:join, chat:write, commands, and Socket Mode enabled with an app-level token.
