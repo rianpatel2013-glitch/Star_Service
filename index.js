@@ -152,6 +152,7 @@ app.command("/ss-find", async ({ ack, command, respond, client }) => {
     try {
         await client.conversations.join({ channel: channelId });
     } catch (joinErr) {
+        console.log("Join error:", joinErr.data?.error);
         if (joinErr.data?.error === "already_in_channel") {
             // continue
         } else if (joinErr.data?.error === "channel_not_found" ||
