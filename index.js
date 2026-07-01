@@ -152,15 +152,18 @@ app.command("/ss-find", async ({ ack, command, respond, client }) => {
     try {
         await client.conversations.join({ channel: channelId });
     } catch (joinErr) {
-        if (joinErr.data?.error === "channel_not_found" ||
+        if (joinErr.data?.error === "already_in_channel") {
+            // continue
+        } else if (joinErr.data?.error === "channel_not_found" ||
             joinErr.data?.error === "method_not_supported_for_channel_type") {
             await respond({
                 text: "Please invite the bot first with `/invite @Star Service` then try again.",
                 replace_original: true
             });
             return;
+        } else {
+            throw joinErr;
         }
-        throw joinErr;
     }
 
     try {
